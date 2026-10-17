@@ -15,6 +15,18 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 function qs(o) { return Object.entries(o).filter(([, v]) => v != null).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&"); }
 function withApi(api, q) { return api + (api.includes("?") ? "&" : "?") + q; }
 
+// 中转：同源部署时直接 /src?u=；从 GitHub Pages 打开时用 WORKER_ORIGIN 写死的 Worker。
+const WORKER_ORIGIN = window.HUB_WORKER_ORIGIN || "";
+// 同源部署（Worker 自己托管）时用相对 /src；GitHub Pages 打开时用写死的 Worker 地址。
+function viaProxy(api, query) {
+  const target = withApi(api, query || "");
+  const sameOrigin = !WORKER_ORIGIN || location.origin === new URL(WORKER_ORIGIN).origin;
+  if (sameOrigin) return "/src?u=" + encodeURIComponent(target);
+  return WORKER_ORIGIN.replace(/\/$/, "") + "/src?u=" + encodeURIComponent(target);
+}
+const hasProxy = () => location.protocol === "http:" || location.protocol === "https:";
+
+
 function timing(api) {
   const t = SPEED.get(api);
   if (!t) return null;
@@ -41,18 +53,19 @@ function episodes(v) {
   return out;
 }
 
-// 速度条颜色：<300ms 绿，<1s 蓝，其余 黄
-function speedClass(ms) { return ms == null ? "dim" : ms < 300 ? "good" : ms < 1000 ? "ok" : "slow"; }
+// 速度标签颜色：<300ms 绿，<1s 蓝，其余 黄
+function speedClass(ms) { return ms == null ? "speed-na" : ms < 300 ? "speed-fast" : ms < 1000 ? "speed-mid" : "speed-slow"; }
 
 async function checkOne(api) {
   const t0 = performance.now();
   try {
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 9000);
-    const res = await fetch(withApi(api, "ac=list"), { signal: ctl.signal, cache: "no-store" });
+    const timer = setTimeout(() => ctl.abort(), 12000);
+    const res = await fetch(viaProxy(api, "ac=list"), { signal: ctl.signal, cache: "no-store" });
     clearTimeout(timer);
-    await res.text();
-    SPEED.set(api, { ms: Math.round(performance.now() - t0), ok: res.ok });
+    const body = await res.json();
+    const ok = res.ok && Array.isArray(body && body.list);
+    SPEED.set(api, { ms: Math.round(performance.now() - t0), ok });
   } catch (e) {
     SPEED.set(api, { ms: 9999, ok: false });
   }
@@ -68,15 +81,17 @@ async function preflight(onProgress) {
 }
 
 function renderStatus() {
-  const posts = {};
-  for (const [api, t] of SPEED) if (t.ok) posts[api] = t.ms;
-  let html = "";
-  for (const c of CATALOG) {
-    const t = SPEED.get(c.api) || { ms: null, ok: false };
-    html += `<span class="dot ${t.ok ? "ok" : "bad"}" title="${esc(c.api)}"></span>` +
-      `<span title="${esc(c.api)}">${esc(c.name)} <b>${t.ok ? t.ms + "ms" : "×"}</b></span>`;
-  }
-  $("#status").innerHTML = html;
+  const ok = [...SPEED.values()].filter((t) => t.ok).length;
+  const total = CATALOG.length;
+  const summary = `<div class="statline">${ok === total
+    ? `<b class="ok">${ok}/${total}</b> 个源可用`
+    : `<b class="${ok ? "" : "bad"}">${ok}/${total}</b> 个源可用${ok ? "" : "，中转可能没部署或当前网络不通"}`}</div>`;
+  const rows = CATALOG.map((c) => {
+    const t = SPEED.get(c.api) || { ok: false };
+    const cls = t.ok ? "dot-ok" : "dot-bad";
+    return `<span class="pill ${cls}" title="${esc(c.api)}"><i></i>${esc(c.name)}<b>${t.ok ? t.ms + "ms" : "×"}</b></span>`;
+  }).join("");
+  $("#status").innerHTML = summary + `<div class="pills">${rows}</div>`;
 }
 
 function sourceScore(c) {
@@ -117,8 +132,8 @@ function renderPlayer() {
 }
 
 function rowCard(row) {
-  const speedTag = row.ms != null ? `<span class="tag t${speedClass(row.ms)}">${row.ms}ms</span>` : "";
-  const eps = row.eps.slice(0, 6).map((e) => `<a class="ep" href="${esc(e.url)}" target="_blank" rel="noreferrer">${esc(e.name)}</a>`).join("");
+  const speedTag = row.ms != null ? `<span class="tag ${speedClass(row.ms)}">${row.ms}ms</span>` : "";
+  const eps = row.eps.slice(0, 8).map((e) => `<a class="ep-btn" href="${esc(e.url)}" target="_blank" rel="noreferrer">${esc(e.name)}</a>`).join("");
   const more = row.eps.length > 6 ? `<span class="sub">+${row.eps.length - 6} 集</span>` : "";
   return `<div class="group">
     <div class="ghead">
@@ -142,47 +157,44 @@ function siteCard(s, rank) {
   const geo = s.geo === "需梯子" ? `<span class="tag" style="color:#d29922;border-color:#d29922">需梯子</span>` : "";
   const ads = s.ads === 0 ? `<span class="tag" style="color:#3fb950;border-color:#3fb950">无广告</span>` : "";
   const fast = s.ms != null ? `<span class="sub">${s.ms}ms</span>` : "";
-  return `<div class="${cls}" onmouseenter="this.dataset.q=QUERY">
+  const tpl = (D.search_templates || {})[s.id] || s.search_url || "";
+  const searchHref = tpl ? encodeURI(tpl.replace("{q}", QUERY)) : "";
+  return `<div class="${cls}">
     <div class="art">${art}</div>
     <div class="body">
       <div class="title">${esc(s.name)}</div>
-      <div class="meta"><span class="tag" style="color:#3fb950;border-color:#3fb950">${rank}</span>${q}${geo}${ads}${fast}</div>
+      <div class="meta"><span class="tag tag-rank">${rank}</span>${q}${geo}${ads}${fast}</div>
       <div class="src">${esc(s.note || "")}</div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <a class="ep" style="flex:1;text-align:center" href="${esc(s.url)}" target="_blank" rel="noreferrer">打开原站</a>
-        ${s.search_url ? `<a class="ep" style="flex:1;text-align:center" href="${esc(encodeURI(s.search_url.replace('{q}', QUERY)))}" target="_blank" rel="noreferrer">站内搜</a>` : ""}
+      <div class="btns">
+        <a class="btn" href="${esc(s.url)}" target="_blank" rel="noreferrer">打开原站</a>
+        ${searchHref
+          ? `<a class="btn btn-primary" href="${esc(searchHref)}" target="_blank" rel="noreferrer">站内搜${QUERY ? "“" + esc(QUERY.slice(0, 8)) + "”" : ""}</a>`
+          : `<a class="btn btn-disabled" href="${esc(s.url)}" target="_blank" rel="noreferrer">进站搜索</a>`}
       </div>
     </div>
   </div>`;
 }
 
 function renderSites() {
-  const q = encodeURIComponent(QUERY);
   $("#sites").innerHTML = `<div class="tiles">${D.sites.map((s, i) =>
     siteCard(s, "推荐 " + (i + 1))).join("")}</div>`;
   $("#sitesnote").textContent = "排序：可抓取程度 + 人工质量 + 首页实测耗时。广告标签表示维护者经验，不是实时结果。";
 }
 
-// 浏览器同源策略：这些采集站目前都没有 Access-Control-Allow-Origin，页面里 fetch 会被拦。
-// 所有请求都带 no-cors 探测：能连通但不一定能读；能读的（少数以后开了 CORS）才会出结果。
-// 读不到的，下方「网站直达 / 站内搜」兜底。
-async function fetchText(url, signal) {
-  const r = await fetch(url, { signal, cache: "no-store" });
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return await r.text();
-}
-
+// 采集站没有 Access-Control-Allow-Origin，浏览器直连一定被拦，所以统一走 /src 中转。
 async function searchOne(api, q) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 15000);
   try {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 12000);
-    const txt = await fetchText(withApi(api, qs({ ac: "detail", wd: q })), ctl.signal);
+    const res = await fetch(viaProxy(api, qs({ ac: "detail", wd: q })), { signal: ctl.signal, cache: "no-store" });
+    const body = await res.json();
+    if (!res.ok || !body || !Array.isArray(body.list)) return null;
+    return body.list;
+  } catch (e) {
+    return null;
+  } finally {
     clearTimeout(timer);
-    const start = txt.indexOf("{");
-    if (start < 0) return [];
-    const j = JSON.parse(txt.slice(start));
-    return j.list || [];
-  } catch (e) { return null; }
+  }
 }
 
 function renderRows() {
@@ -257,10 +269,9 @@ async function runSearch() {
       ROWS.map(rowCard).join("");
   } else if (reachable === 0) {
     $("#res").innerHTML = `<div class="bad">
-      浏览器被同源策略拦住，${CATALOG.length} 个采集站都不能直接读（它们目前都没开 CORS）。<br><br>
-      两条替代路线：<br>
-      ① 往下滑看 <b>网站直达</b>，用“站内搜”打开；<br>
-      ② 把页面底部 <b>config.json</b> 导入 FongMi / 影视仓，播放器里搜——同样只用直连采集源、不加载任何 JAR。
+      中转没连上（0 / ${CATALOG.length} 个源返回数据）。<br><br>
+      如果你的页面是 GitHub Pages 打开、而 Worker 还没部署，先按 README 部署 Worker 再刷新；<br>
+      临时替代：往下滑用 <b>网站直达 → 站内搜</b>，或把 <b>config.json</b> 导入 FongMi / 影视仓。
     </div>`;
   } else {
     renderRows();
@@ -284,10 +295,16 @@ async function start() {
   document.getElementById("gen2").textContent = D.generated_at || "";
   document.getElementById("ncat").textContent = CATALOG.length;
   bind();
-  const siteChip = D.sites.length ? "" : "";
-  $("#chips").innerHTML = CATALOG.slice(0, 8).map((c) =>
-    `<span class="chip on">${esc(c.name)}${c.quality ? "·" + c.quality : ""}</span>`
-  ).join("") + `<span class="chip">共 ${CATALOG.length} 个源</span>`;
+  $("#chips").innerHTML = ["沙丘", "庆余年", "繁花", "三体", "流浪地球"].map((k) =>
+    `<button class="chip" type="button" data-q="${esc(k)}">${esc(k)}</button>`
+  ).join("");
+  $("#chips").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-q]");
+    if (!b) return;
+    $("#q").value = b.dataset.q;
+    QUERY = b.dataset.q;
+    runSearch();
+  });
   renderEmpty();
   renderSites();
   renderPlayer();
@@ -297,6 +314,11 @@ async function start() {
   });
   renderStatus();
   renderPlayer();
+  const okCount = [...SPEED.values()].filter((t) => t.ok).length;
+  if (okCount > 0) {
+    $("#banner").classList.add("banner-ok");
+    $("#banner").innerHTML = `中转正常：<b>${okCount}/${CATALOG.length}</b> 个源可用。输入片名或点上面热门词，直接搜。`;
+  }
 }
 
 start();

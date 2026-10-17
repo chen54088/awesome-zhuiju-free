@@ -23,8 +23,8 @@ h1{font-size:20px;margin:0}
 .hint{color:var(--dim);font-size:13px;margin-bottom:10px}
 .hint b{color:var(--text)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 18px}
-.chip{font-size:13px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none;color:var(--dim)}
-.chip.on{border-color:var(--blue);color:var(--text);background:#1f2a3a}
+.chip{font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none;color:var(--text);background:var(--panel)}
+.chip:hover{border-color:var(--blue)}
 #status{font-size:13px;color:var(--dim);min-height:20px;margin-bottom:10px}
 #status .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--dim);margin:0 5px 0 10px}
 #status .dot.ok{background:var(--green)}
@@ -35,15 +35,35 @@ h1{font-size:20px;margin:0}
 .post{width:86px;text-align:right;color:var(--dim);font-size:12px}
 .bar{width:90px;height:6px;border-radius:6px;background:#30363d;overflow:hidden}
 .bar>i{display:block;height:100%;background:var(--green)}
-.ep{display:inline-block;margin:3px 6px 3px 0;padding:2px 9px;border-radius:6px;background:#1b2330;border:1px solid var(--line);color:var(--text);font-size:13px}
-.ep:hover{border-color:var(--blue)}
-.tile .ep{background:#0f1a12;border-color:#1f3d24}
 .sub{font-size:12px;color:var(--dim)}
 .tag{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid;white-space:nowrap}
 .t4k{color:var(--purple);border-color:var(--purple)}.tbd{color:var(--blue);border-color:var(--blue)}.t1080{color:var(--green);border-color:var(--green)}
 .bad{border:1px solid #5a2d2d;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:13px}
 .banner{border:1px solid #3d4a2d;background:#1b2318;color:#d7e3cc;border-radius:10px;padding:10px 14px;font-size:13px;margin:4px 0 12px;line-height:1.7}
-.banner b{color:#fff}
+.banner b{color:var(--text)}
+.banner-ok{border-color:#2d5a36;background:#12261a;color:#bfe3c8}
+.banner-ok b{color:var(--green)}
+.statline{font-size:13px;color:var(--dim);margin:6px 0 8px}
+.statline .ok{color:var(--green)}.statline .bad{color:var(--red)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.pill i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pill b{font-weight:600;font-variant-numeric:tabular-nums}
+.dot-ok i{background:var(--green)}.dot-ok b{color:var(--green)}
+.dot-bad i{background:var(--red)}.dot-bad b{color:var(--red)}
+.tag-rank{color:var(--blue);border-color:var(--blue)}
+.speed-fast{color:var(--green);border-color:var(--green)}
+.speed-mid{color:var(--blue);border-color:var(--blue)}
+.speed-slow{color:var(--yellow);border-color:var(--yellow)}
+.speed-na{color:var(--dim);border-color:var(--line)}
+.btns{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;text-align:center;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:13px;font-weight:500;line-height:1.2}
+.btn:hover{border-color:var(--blue);text-decoration:none}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{filter:brightness(1.08);text-decoration:none}
+.btn-disabled{background:transparent;color:var(--dim)}
+.ep-btn{display:inline-block;margin:4px 8px 4px 0;padding:5px 12px;border-radius:8px;background:var(--panel);border:1px solid var(--line);color:var(--text);font-size:13px}
+.ep-btn:hover{border-color:var(--blue);text-decoration:none}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:14px}
 .tile{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:200px}
 .tile .art{height:110px;background:linear-gradient(135deg,#1d2637,#283548);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#4a5a75}
@@ -64,7 +84,10 @@ footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(
   body{background:var(--bg);color:var(--text)}
   .search input,.tile,.group{background:#fff;color:var(--text)}
   pre{background:#f6f8fa}
-  .ep{background:#eff6ff}
+  .banner{background:#f1f8e9;color:#2f3b24;border-color:#c5d9a8}
+  .banner b{color:#1a1f16}
+  .ep-btn,.btn,.pill{background:#fff}
+  .btn-primary{background:#0969da;color:#fff}
   .tile .art{background:linear-gradient(135deg,#e7eef7,#dbe6f3);color:#6b7c94}
 }
 </style>
@@ -80,7 +103,7 @@ footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(
   <a class="badge" href="./config.json" download="config.json">下载 config.json</a>
 </header>
 
-<div class="banner">浏览器里跨域搜片会被 CORS 拦（采集站目前都不开）。<b>要一键播放</b>：下载 config.json → 导入 FongMi / 影视仓 → 在 App 里搜。<b>不想装 App</b>：直接滑到下面“网站直达”，站内搜也能看。</div>
+<div class="banner" id="banner">采集站没开 CORS，所以本页通过中转读取。中转没响应时：用下方 <b>网站直达 → 站内搜</b>，或导入 <b>config.json</b> 到 FongMi / 影视仓。</div>
 
 <div class="search">
   <input id="q" placeholder="输入片名 / 演员，如 沙丘、庆余年、刘亦菲" autocomplete="off" autofocus>
@@ -322,6 +345,7 @@ footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(
 </footer>
 </div>
 <script src="data.js"></script>
+<script>window.HUB_WORKER_ORIGIN = "https://zhuiju-hub.atbx5r7k23g.workers.dev";</script>
 <script src="app.js"></script>
 </body>
 </html>
