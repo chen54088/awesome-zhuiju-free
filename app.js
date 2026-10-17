@@ -156,18 +156,25 @@ function renderSites() {
   $("#sitesnote").textContent = "排序：可抓取程度 + 人工质量 + 首页实测耗时。广告标签表示维护者经验，不是实时结果。";
 }
 
+// 浏览器同源策略：这些采集站目前都没有 Access-Control-Allow-Origin，页面里 fetch 会被拦。
+// 所有请求都带 no-cors 探测：能连通但不一定能读；能读的（少数以后开了 CORS）才会出结果。
+// 读不到的，下方「网站直达 / 站内搜」兜底。
+async function fetchText(url, signal) {
+  const r = await fetch(url, { signal, cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return await r.text();
+}
+
 async function searchOne(api, q) {
   try {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 12000);
-    const res = await fetch(withApi(api, qs({ ac: "detail", wd: q })), { signal: ctl.signal, cache: "no-store" });
+    const txt = await fetchText(withApi(api, qs({ ac: "detail", wd: q })), ctl.signal);
     clearTimeout(timer);
-    if (!res.ok) return null;
-    const txt = await res.text();
     const start = txt.indexOf("{");
-    if (start < 0) return null;
+    if (start < 0) return [];
     const j = JSON.parse(txt.slice(start));
-    return j && Array.isArray(j.list) ? j.list : null;
+    return j.list || [];
   } catch (e) { return null; }
 }
 
@@ -194,7 +201,7 @@ async function runSearch() {
     const t = performance.now();
     const list = await searchOne(c.api, q);
     const ms = Math.round(performance.now() - t);
-    return { c, list: list || [], ms };
+    return { c, list: list || [], raw: list, ms };
   }));
   SEARCHED = settled.filter((s) => s.list.length).length;
 
@@ -236,14 +243,22 @@ async function runSearch() {
     return qb - qa || b.hits - a.hits || (a.ms || 9e9) - (b.ms || 9e9);
   });
   const took = Math.round(performance.now() - t0);
+  const reachable = settled.filter((s) => s.raw !== null).length;
   if (ROWS.length) {
     $("#res").innerHTML =
       `<div class="hint">“${esc(QUERY)}” 在 <b>${SEARCHED}</b> / ${CATALOG.length} 个源命中，聚合 <b>${ROWS.length}</b> 部，耗时 ${took}ms。点任意集数直接播放。</div>` +
       ROWS.map(rowCard).join("");
-    window.__lastSearch = { query: QUERY, hits: SEARCHED, groups: ROWS.length, ms: took };
+  } else if (reachable === 0) {
+    $("#res").innerHTML = `<div class="bad">
+      浏览器被同源策略拦住，${CATALOG.length} 个采集站都不能直接读（它们目前都没开 CORS）。<br><br>
+      两条替代路线：<br>
+      ① 往下滑看 <b>网站直达</b>，用“站内搜”打开；<br>
+      ② 把页面底部 <b>config.json</b> 导入 FongMi / 影视仓，播放器里搜——同样只用直连采集源、不加载任何 JAR。
+    </div>`;
   } else {
     renderRows();
   }
+  window.__lastSearch = { query: QUERY, hits: SEARCHED, reachable, groups: ROWS.length, ms: took };
 }
 
 function bind() {
