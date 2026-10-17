@@ -15,16 +15,53 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 function qs(o) { return Object.entries(o).filter(([, v]) => v != null).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&"); }
 function withApi(api, q) { return api + (api.includes("?") ? "&" : "?") + q; }
 
-// 中转：同源部署时直接 /src?u=；从 GitHub Pages 打开时用 WORKER_ORIGIN 写死的 Worker。
+// 中转有多条线路，按顺序尝试，谁先成功用谁：
+//   1) 同源 /src          —— Worker 自己托管页面时最快
+//   2) 自建 Worker 域名    —— GitHub Pages 打开时用
+//   3) 公共 CORS 代理      —— 以上都不通时兜底（只读、只带片名）
 const WORKER_ORIGIN = window.HUB_WORKER_ORIGIN || "";
-// 同源部署（Worker 自己托管）时用相对 /src；GitHub Pages 打开时用写死的 Worker 地址。
-function viaProxy(api, query) {
+const PUBLIC_PROXIES = [
+  (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+  (u) => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u),
+];
+// 实测成功的线路会被记住，后续请求直接复用，不再逐个重试
+let PROXY_MODE = null;
+
+function proxyRoutes(api, query) {
   const target = withApi(api, query || "");
+  const routes = [];
   const sameOrigin = !WORKER_ORIGIN || location.origin === new URL(WORKER_ORIGIN).origin;
-  if (sameOrigin) return "/src?u=" + encodeURIComponent(target);
-  return WORKER_ORIGIN.replace(/\/$/, "") + "/src?u=" + encodeURIComponent(target);
+  if (sameOrigin) routes.push({ kind: "same", url: "/src?u=" + encodeURIComponent(target) });
+  if (WORKER_ORIGIN && !sameOrigin) {
+    routes.push({ kind: "worker", url: WORKER_ORIGIN.replace(/\/$/, "") + "/src?u=" + encodeURIComponent(target) });
+  }
+  if (location.protocol === "http:" || location.protocol === "https:") {
+    for (const fn of PUBLIC_PROXIES) routes.push({ kind: "public", url: fn(target) });
+  }
+  if (PROXY_MODE) routes.sort((a, b) => (a.kind === PROXY_MODE ? -1 : b.kind === PROXY_MODE ? 1 : 0));
+  return routes;
 }
-const hasProxy = () => location.protocol === "http:" || location.protocol === "https:";
+
+async function fetchViaProxy(api, query, timeoutMs) {
+  let lastError = null;
+  for (const route of proxyRoutes(api, query)) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      const res = await fetch(route.url, { signal: ctl.signal, cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const body = await res.json();
+      clearTimeout(timer);
+      PROXY_MODE = route.kind;
+      return body;
+    } catch (e) {
+      lastError = e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastError || new Error("no route");
+}
 
 
 function timing(api) {
@@ -59,12 +96,8 @@ function speedClass(ms) { return ms == null ? "speed-na" : ms < 300 ? "speed-fas
 async function checkOne(api) {
   const t0 = performance.now();
   try {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 12000);
-    const res = await fetch(viaProxy(api, "ac=list"), { signal: ctl.signal, cache: "no-store" });
-    clearTimeout(timer);
-    const body = await res.json();
-    const ok = res.ok && Array.isArray(body && body.list);
+    const body = await fetchViaProxy(api, "ac=list", 12000);
+    const ok = Array.isArray(body && body.list);
     SPEED.set(api, { ms: Math.round(performance.now() - t0), ok });
   } catch (e) {
     SPEED.set(api, { ms: 9999, ok: false });
@@ -181,19 +214,13 @@ function renderSites() {
   $("#sitesnote").textContent = "排序：可抓取程度 + 人工质量 + 首页实测耗时。广告标签表示维护者经验，不是实时结果。";
 }
 
-// 采集站没有 Access-Control-Allow-Origin，浏览器直连一定被拦，所以统一走 /src 中转。
+// 采集站没有 Access-Control-Allow-Origin，浏览器直连一定被拦，所以统一走中转线路。
 async function searchOne(api, q) {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 15000);
   try {
-    const res = await fetch(viaProxy(api, qs({ ac: "detail", wd: q })), { signal: ctl.signal, cache: "no-store" });
-    const body = await res.json();
-    if (!res.ok || !body || !Array.isArray(body.list)) return null;
-    return body.list;
+    const body = await fetchViaProxy(api, qs({ ac: "detail", wd: q }), 20000);
+    return Array.isArray(body && body.list) ? body.list : null;
   } catch (e) {
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -269,9 +296,8 @@ async function runSearch() {
       ROWS.map(rowCard).join("");
   } else if (reachable === 0) {
     $("#res").innerHTML = `<div class="bad">
-      中转没连上（0 / ${CATALOG.length} 个源返回数据）。<br><br>
-      如果你的页面是 GitHub Pages 打开、而 Worker 还没部署，先按 README 部署 Worker 再刷新；<br>
-      临时替代：往下滑用 <b>网站直达 → 站内搜</b>，或把 <b>config.json</b> 导入 FongMi / 影视仓。
+      所有中转线路都没连上（0 / ${CATALOG.length} 个源返回数据）。<br><br>
+      请检查网络后重试；仍然不行就用：<b>网站直达 → 站内搜</b>，或把 <b>config.json</b> 导入 FongMi / 影视仓。
     </div>`;
   } else {
     renderRows();
@@ -316,10 +342,16 @@ async function start() {
   renderStatus();
   renderPlayer();
   const okCount = [...SPEED.values()].filter((t) => t.ok).length;
+  const routeName = { same: "自建 Worker（同源）", worker: "自建 Worker", public: "公共 CORS 代理" }[PROXY_MODE] || "未连通";
   if (okCount > 0) {
+    $("#banner").classList.remove("banner-warn");
     $("#banner").classList.add("banner-ok");
-    $("#banner").innerHTML = `中转正常：<b>${okCount}/${CATALOG.length}</b> 个源可用。输入片名或点上面热门词，直接搜。`;
+    $("#banner").innerHTML = `线路：<b>${routeName}</b>，<b>${okCount}/${CATALOG.length}</b> 个源可用。输入片名或点上面热门词直接搜。`;
+  } else {
+    $("#banner").classList.add("banner-warn");
+    $("#banner").innerHTML = `所有线路都没连上。可先用下方 <b>网站直达 → 站内搜</b>，或导入 <b>config.json</b> 到 FongMi / 影视仓。`;
   }
+  window.__proxyMode = PROXY_MODE;
 }
 
 start();
