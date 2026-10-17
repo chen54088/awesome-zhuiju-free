@@ -1,0 +1,189 @@
+{
+  "generated_at": "2026-10-17T09:26:36+00:00",
+  "catalog": [
+    {
+      "name": "索尼高清",
+      "api": "https://suoniapi.com/api.php/provide/vod",
+      "quality": "4K",
+      "ok": true,
+      "ms": 855,
+      "format": "json"
+    },
+    {
+      "name": "创享聚合",
+      "api": "http://ys.cxkjg.cn/api/provide/vod",
+      "quality": "蓝光",
+      "ok": true,
+      "ms": 785,
+      "format": "json"
+    },
+    {
+      "name": "乐播正品",
+      "api": "https://lbapi9.com/api.php/provide/vod",
+      "quality": "蓝光",
+      "ok": true,
+      "ms": 1238,
+      "format": "json"
+    },
+    {
+      "name": "艾旦蓝光",
+      "api": "https://lovedan.net/api.php/provide/vod",
+      "quality": "蓝光",
+      "ok": true,
+      "ms": 2140,
+      "format": "json"
+    },
+    {
+      "name": "天涯资源",
+      "api": "http://tyyszy.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 418,
+      "format": "json"
+    },
+    {
+      "name": "电影天堂",
+      "api": "http://caiji.dyttzyapi.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 421,
+      "format": "json"
+    },
+    {
+      "name": "非凡资源",
+      "api": "http://ffzy.tv/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 470,
+      "format": "json"
+    },
+    {
+      "name": "新浪资源",
+      "api": "http://api.xinlangapi.com/xinlangapi.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 474,
+      "format": "json"
+    },
+    {
+      "name": "量子资源",
+      "api": "http://cj.lziapi.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 525,
+      "format": "json"
+    },
+    {
+      "name": "极速资源",
+      "api": "https://jszyapi.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 692,
+      "format": "json"
+    },
+    {
+      "name": "光速资源",
+      "api": "https://api.guangsuapi.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 705,
+      "format": "json"
+    },
+    {
+      "name": "红牛资源",
+      "api": "https://www.hongniuzy2.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 715,
+      "format": "json"
+    },
+    {
+      "name": "虎牙资源",
+      "api": "https://www.huyaapi.com/api.php/provide/vod/from/hym3u8",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 722,
+      "format": "json"
+    },
+    {
+      "name": "妞妞资源",
+      "api": "https://api.niuniuzy.me/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 787,
+      "format": "json"
+    },
+    {
+      "name": "建安资源",
+      "api": "http://154.219.117.232:9981/jacloudapi.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 813,
+      "format": "json"
+    },
+    {
+      "name": "SL资源",
+      "api": "https://slapibf.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 828,
+      "format": "json"
+    },
+    {
+      "name": "百度资源",
+      "api": "https://api.apibdzy.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 848,
+      "format": "json"
+    },
+    {
+      "name": "闪电资源",
+      "api": "http://sdzyapi.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 860,
+      "format": "json"
+    },
+    {
+      "name": "凤凰资源",
+      "api": "http://fhapi9.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 880,
+      "format": "json"
+    },
+    {
+      "name": "火狐资源",
+      "api": "https://hhzyapi.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 883,
+      "format": "json"
+    },
+    {
+      "name": "暴风资源",
+      "api": "https://bfzyapi.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 901,
+      "format": "json"
+    },
+    {
+      "name": "量子B站",
+      "api": "https://lzizy1.com/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 940,
+      "format": "json"
+    },
+    {
+      "name": "桃花资源",
+      "api": "https://thzy1.me/api.php/provide/vod",
+      "quality": "1080P",
+      "ok": true,
+      "ms": 2028,
+      "format": "json"
+    }
+  ]
+}
