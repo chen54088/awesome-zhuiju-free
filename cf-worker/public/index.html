@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>追剧聚合 · 可用源一站搜</title>
+<meta name="description" content="把正在可用的影视采集源和网站在一个页面里搜索，按速度和清晰度排序。">
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--line:#30363d;--text:#e6edf3;--dim:#8b949e;
+--green:#3fb950;--yellow:#d29922;--red:#f85149;--blue:#58a6ff;--purple:#bc8cff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:20px;margin:0}
+.badge{font-size:12px;padding:2px 8px;border:1px solid var(--line);border-radius:20px;color:var(--dim)}
+.search{display:flex;gap:8px;margin:10px 0 6px}
+.search input{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:12px 14px;border-radius:10px;font-size:16px;outline:none}
+.search input:focus{border-color:var(--blue)}
+.search button{background:var(--blue);color:#03111f;border:0;border-radius:10px;padding:0 22px;font-weight:600;cursor:pointer}
+.hint{color:var(--dim);font-size:13px;margin-bottom:10px}
+.hint b{color:var(--text)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 18px}
+.chip{font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none;color:var(--text);background:var(--panel)}
+.chip:hover{border-color:var(--blue)}
+#status{font-size:13px;color:var(--dim);min-height:20px;margin-bottom:10px}
+#status .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--dim);margin:0 5px 0 10px}
+#status .dot.ok{background:var(--green)}
+#status .dot.bad{background:var(--red)}
+.group{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.ghead{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--panel2);cursor:pointer;font-size:14px}
+.ghead .name{font-weight:600;flex:1}
+.post{width:86px;text-align:right;color:var(--dim);font-size:12px}
+.bar{width:90px;height:6px;border-radius:6px;background:#30363d;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--green)}
+.sub{font-size:12px;color:var(--dim)}
+.tag{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid;white-space:nowrap}
+.t4k{color:var(--purple);border-color:var(--purple)}.tbd{color:var(--blue);border-color:var(--blue)}.t1080{color:var(--green);border-color:var(--green)}
+.bad{border:1px solid #5a2d2d;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:13px}
+.banner{border:1px solid #3d4a2d;background:#1b2318;color:#d7e3cc;border-radius:10px;padding:10px 14px;font-size:13px;margin:4px 0 12px;line-height:1.7}
+.banner b{color:var(--text)}
+.banner-ok{border-color:#2d5a36;background:#12261a;color:#bfe3c8}
+.banner-ok b{color:var(--green)}
+.statline{font-size:13px;color:var(--dim);margin:6px 0 8px}
+.statline .ok{color:var(--green)}.statline .bad{color:var(--red)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.pill i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pill b{font-weight:600;font-variant-numeric:tabular-nums}
+.dot-ok i{background:var(--green)}.dot-ok b{color:var(--green)}
+.dot-bad i{background:var(--red)}.dot-bad b{color:var(--red)}
+.tag-rank{color:var(--blue);border-color:var(--blue)}
+.speed-fast{color:var(--green);border-color:var(--green)}
+.speed-mid{color:var(--blue);border-color:var(--blue)}
+.speed-slow{color:var(--yellow);border-color:var(--yellow)}
+.speed-na{color:var(--dim);border-color:var(--line)}
+.btns{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;text-align:center;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:13px;font-weight:500;line-height:1.2}
+.btn:hover{border-color:var(--blue);text-decoration:none}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{filter:brightness(1.08);text-decoration:none}
+.btn-disabled{background:transparent;color:var(--dim)}
+.ep-btn{display:inline-block;margin:4px 8px 4px 0;padding:5px 12px;border-radius:8px;background:var(--panel);border:1px solid var(--line);color:var(--text);font-size:13px}
+.ep-btn:hover{border-color:var(--blue);text-decoration:none}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:14px}
+.tile{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:200px}
+.tile .art{height:110px;background:linear-gradient(135deg,#1d2637,#283548);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#4a5a75}
+.tile .body{padding:10px 12px 12px}
+.tile .title{font-size:14px;font-weight:600;margin-bottom:4px;min-height:42px}
+.tile .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-bottom:8px}
+.tile .src{font-size:12px;color:var(--dim);height:18px;overflow:hidden}
+.tile .badge2{position:absolute;top:6px;right:6px;font-size:11px;padding:1px 6px;border-radius:4px;background:#0d1117cc;border:1px solid var(--line)}
+.ads1{border-color:#5a4a2d}.ads2{border-color:#5a2d2d}
+.note{font-size:12px;color:var(--dim);padding:8px 12px;border-top:1px dashed var(--line)}
+.sect{margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+.sect h2{font-size:16px;margin:0}
+pre{white-space:pre-wrap;word-break:break-all;background:#0b1017;border:1px solid var(--line);padding:12px;border-radius:10px;font-size:13px}
+#loadmore{display:none;margin:10px auto;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 30px;cursor:pointer}
+footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-color-scheme:light){
+  :root{--bg:#f6f8fa;--panel:#fff;--panel2:#f0f3f6;--line:#d0d7de;--text:#1f2328;--dim:#59636e;--blue:#0969da}
+  body{background:var(--bg);color:var(--text)}
+  .search input,.tile,.group{background:#fff;color:var(--text)}
+  pre{background:#f6f8fa}
+  .banner{background:#f1f8e9;color:#2f3b24;border-color:#c5d9a8}
+  .banner b{color:#1a1f16}
+  .ep-btn,.btn,.pill{background:#fff}
+  .btn-primary{background:#0969da;color:#fff}
+  .tile .art{background:linear-gradient(135deg,#e7eef7,#dbe6f3);color:#6b7c94}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>追剧聚合</h1>
+  <span class="badge">可用源一站搜</span>
+  <span class="badge" id="gen"></span>
+  <a class="badge" href="./status.html">源状态</a>
+  <a class="badge" href="https://github.com/chen54088/awesome-zhuiju-free" target="_blank" rel="noreferrer">数据来源</a>
+  <a class="badge" href="./config.json" download="config.json">下载 config.json</a>
+</header>
+
+<div class="banner" id="banner">采集站没开 CORS，所以本页通过中转读取。中转没响应时：用下方 <b>网站直达 → 站内搜</b>，或导入 <b>config.json</b> 到 FongMi / 影视仓。</div>
+
+<div class="search">
+  <input id="q" placeholder="输入片名 / 演员，如 沙丘、庆余年、刘亦菲" autocomplete="off" autofocus>
+  <button id="go">搜索</button>
+</div>
+<div class="hint">一次直连 <b id="ncat"></b> 个采集源，按 <b>命中数·画质·速度</b> 排序；每集直达播放。冷启动会测一次速，请稍候。</div>
+<div class="chips" id="chips"></div>
+<div id="status"></div>
+<main id="res"></main>
+<button id="loadmore">加载更多</button>
+
+<section class="sect"><h2>网站直达</h2><span class="sub">想要原站界面 / 弹幕 / 收藏时用；已按速度和画质排好</span></section>
+<div id="sites"></div>
+<div class="sub" id="sitesnote" style="margin-bottom:20px"></div>
+
+<section class="sect"><h2>接入自己的播放器（推荐，能真一键播放）</h2></section>
+<div class="sub" style="margin-bottom:8px">
+  1. 下载 <a href="./config.json" download="config.json">config.json</a> 放到任意能公网访问的地方（或直接在你 fork 的 raw 地址），
+  2. FongMi / 影视仓 → 设置 → 配置地址，填这个 JSON 的 URL，
+  3. 在 App 里搜索，多源结果自动合并。<br>
+  这个配置只包含 <b>type=1 直连采集站</b>，没有 JAR、没有远程脚本，换源在 App 内完成。
+</div>
+<pre id="player" data-cfg="{
+  &quot;sites&quot;: [
+    {
+      &quot;key&quot;: &quot;hub_1&quot;,
+      &quot;name&quot;: &quot;索尼高清 · 4K&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://suoniapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_2&quot;,
+      &quot;name&quot;: &quot;创享聚合 · 蓝光&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://ys.cxkjg.cn/api/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_3&quot;,
+      &quot;name&quot;: &quot;乐播正品 · 蓝光&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://lbapi9.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_4&quot;,
+      &quot;name&quot;: &quot;艾旦蓝光 · 蓝光&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://lovedan.net/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_5&quot;,
+      &quot;name&quot;: &quot;天涯资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://tyyszy.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_6&quot;,
+      &quot;name&quot;: &quot;电影天堂 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://caiji.dyttzyapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_7&quot;,
+      &quot;name&quot;: &quot;非凡资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://ffzy.tv/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_8&quot;,
+      &quot;name&quot;: &quot;新浪资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://api.xinlangapi.com/xinlangapi.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_9&quot;,
+      &quot;name&quot;: &quot;量子资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://cj.lziapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_10&quot;,
+      &quot;name&quot;: &quot;极速资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://jszyapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_11&quot;,
+      &quot;name&quot;: &quot;光速资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://api.guangsuapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_12&quot;,
+      &quot;name&quot;: &quot;红牛资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://www.hongniuzy2.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_13&quot;,
+      &quot;name&quot;: &quot;虎牙资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://www.huyaapi.com/api.php/provide/vod/from/hym3u8&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_14&quot;,
+      &quot;name&quot;: &quot;妞妞资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://api.niuniuzy.me/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_15&quot;,
+      &quot;name&quot;: &quot;建安资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://154.219.117.232:9981/jacloudapi.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_16&quot;,
+      &quot;name&quot;: &quot;SL资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://slapibf.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_17&quot;,
+      &quot;name&quot;: &quot;百度资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://api.apibdzy.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_18&quot;,
+      &quot;name&quot;: &quot;闪电资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://sdzyapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_19&quot;,
+      &quot;name&quot;: &quot;凤凰资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;http://fhapi9.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_20&quot;,
+      &quot;name&quot;: &quot;火狐资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://hhzyapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_21&quot;,
+      &quot;name&quot;: &quot;暴风资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://bfzyapi.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_22&quot;,
+      &quot;name&quot;: &quot;量子B站 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://lzizy1.com/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    },
+    {
+      &quot;key&quot;: &quot;hub_23&quot;,
+      &quot;name&quot;: &quot;桃花资源 · 1080P&quot;,
+      &quot;type&quot;: 1,
+      &quot;api&quot;: &quot;https://thzy1.me/api.php/provide/vod&quot;,
+      &quot;searchable&quot;: 1,
+      &quot;quickSearch&quot;: 1,
+      &quot;filterable&quot;: 1
+    }
+  ]
+}"></pre>
+
+<footer>
+  前端只做聚合与直连，不托管任何影片文件；点击播放会直接请求对应采集源。<br>
+  源来自公开收录的苹果CMS 采集接口，仅用于个人学习与测试，请遵守当地法律法规。<br>
+  generated: <span id="gen2"></span>
+</footer>
+</div>
+<script src="data.js"></script>
+<script>window.HUB_WORKER_ORIGIN = "https://zhuiju-hub.atbx5r7k23g.workers.dev";</script>
+<script src="app.js"></script>
+</body>
+</html>
