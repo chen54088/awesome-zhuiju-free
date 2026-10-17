@@ -103,9 +103,16 @@ function buildPlayerConfig() {
 
 function renderPlayer() {
   const txt = buildPlayerConfig();
+  const fastest = CATALOG.slice()
+    .filter((c) => (SPEED.get(c.api) || {}).ok)
+    .sort((a, b) => sourceScore(b) - sourceScore(a))
+    .slice(0, 8)
+    .map((c, i) => `${i + 1}. ${c.name}（${c.quality}，${(SPEED.get(c.api) || {}).ms}ms）`)
+    .join("\n");
   $("#player").textContent =
-    "# 每次打开本页，配置会自动更新为当天实测最快的几个源。\n" +
-    "# 复制下面内容，保存成 config.json，再把地址填进 FongMi / 影视仓的接口。\n" + txt;
+    "本次实测可用的源，已按画质 + 速度排序：\n" + (fastest || "（测速未完成）") +
+    "\n\n上面的 config.json 就是这份清单（全量版），点顶部按钮直接下载。\n" +
+    "测速结果会因网络变化，重开本页就会重新排序。";
   $("#player").dataset.cfg = txt;
 }
 

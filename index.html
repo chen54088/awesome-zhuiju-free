@@ -42,6 +42,8 @@ h1{font-size:20px;margin:0}
 .tag{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid;white-space:nowrap}
 .t4k{color:var(--purple);border-color:var(--purple)}.tbd{color:var(--blue);border-color:var(--blue)}.t1080{color:var(--green);border-color:var(--green)}
 .bad{border:1px solid #5a2d2d;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:13px}
+.banner{border:1px solid #3d4a2d;background:#1b2318;color:#d7e3cc;border-radius:10px;padding:10px 14px;font-size:13px;margin:4px 0 12px;line-height:1.7}
+.banner b{color:#fff}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:14px}
 .tile{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:200px}
 .tile .art{height:110px;background:linear-gradient(135deg,#1d2637,#283548);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#4a5a75}
@@ -57,6 +59,14 @@ h1{font-size:20px;margin:0}
 pre{white-space:pre-wrap;word-break:break-all;background:#0b1017;border:1px solid var(--line);padding:12px;border-radius:10px;font-size:13px}
 #loadmore{display:none;margin:10px auto;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 30px;cursor:pointer}
 footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-color-scheme:light){
+  :root{--bg:#f6f8fa;--panel:#fff;--panel2:#f0f3f6;--line:#d0d7de;--text:#1f2328;--dim:#59636e;--blue:#0969da}
+  body{background:var(--bg);color:var(--text)}
+  .search input,.tile,.group{background:#fff;color:var(--text)}
+  pre{background:#f6f8fa}
+  .ep{background:#eff6ff}
+  .tile .art{background:linear-gradient(135deg,#e7eef7,#dbe6f3);color:#6b7c94}
+}
 </style>
 </head>
 <body>
@@ -67,7 +77,10 @@ footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(
   <span class="badge" id="gen"></span>
   <a class="badge" href="./status.html">源状态</a>
   <a class="badge" href="https://github.com/chen54088/awesome-zhuiju-free" target="_blank" rel="noreferrer">数据来源</a>
+  <a class="badge" href="./config.json" download="config.json">下载 config.json</a>
 </header>
+
+<div class="banner">浏览器里跨域搜片会被 CORS 拦（采集站目前都不开）。<b>要一键播放</b>：下载 config.json → 导入 FongMi / 影视仓 → 在 App 里搜。<b>不想装 App</b>：直接滑到下面“网站直达”，站内搜也能看。</div>
 
 <div class="search">
   <input id="q" placeholder="输入片名 / 演员，如 沙丘、庆余年、刘亦菲" autocomplete="off" autofocus>
@@ -83,7 +96,13 @@ footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(
 <div id="sites"></div>
 <div class="sub" id="sitesnote" style="margin-bottom:20px"></div>
 
-<section class="sect"><h2>接入自己的播放器</h2></section>
+<section class="sect"><h2>接入自己的播放器（推荐，能真一键播放）</h2></section>
+<div class="sub" style="margin-bottom:8px">
+  1. 下载 <a href="./config.json" download="config.json">config.json</a> 放到任意能公网访问的地方（或直接在你 fork 的 raw 地址），
+  2. FongMi / 影视仓 → 设置 → 配置地址，填这个 JSON 的 URL，
+  3. 在 App 里搜索，多源结果自动合并。<br>
+  这个配置只包含 <b>type=1 直连采集站</b>，没有 JAR、没有远程脚本，换源在 App 内完成。
+</div>
 <pre id="player" data-cfg="{
   &quot;sites&quot;: [
     {
@@ -294,10 +313,7 @@ footer{margin-top:30px;font-size:12px;color:var(--dim);border-top:1px solid var(
       &quot;filterable&quot;: 1
     }
   ]
-}">
-# 把浏览器地址栏里 #cfg= 之后的内容整段复制给 FongMi / 影视仓的"网络配置 / 接口"：
-# 每次打开本页，配置会自动更新为当天实测最快的几个源。
-</pre>
+}"></pre>
 
 <footer>
   前端只做聚合与直连，不托管任何影片文件；点击播放会直接请求对应采集源。<br>
