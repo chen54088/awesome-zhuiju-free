@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "zhuiju-hub",
+  "main": "src/worker.mjs",
+  "upload_source_maps": true,
+  "compatibility_date": "2026-10-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  // 页面和 /src 中转同源，浏览器不需要再处理一次跨域
+  "rules": [
+    { "type": "ESModule", "globs": ["**/*.js", "**/*.mjs"], "fallthrough": true }
+  ],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/src", "/ping"]
+  }
+}
