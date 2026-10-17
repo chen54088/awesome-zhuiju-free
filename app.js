@@ -295,8 +295,9 @@ async function start() {
   document.getElementById("gen2").textContent = D.generated_at || "";
   document.getElementById("ncat").textContent = CATALOG.length;
   bind();
+  // 用单引号包 data-q，避免和 app.js 里双引号模板串混在一起
   $("#chips").innerHTML = ["沙丘", "庆余年", "繁花", "三体", "流浪地球"].map((k) =>
-    `<button class="chip" type="button" data-q="${esc(k)}">${esc(k)}</button>`
+    `<button class="chip" type='button' data-q='${esc(k)}'>${esc(k)}</button>`
   ).join("");
   $("#chips").addEventListener("click", (e) => {
     const b = e.target.closest("[data-q]");
